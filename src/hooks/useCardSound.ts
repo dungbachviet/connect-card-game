@@ -4,11 +4,38 @@ const STORAGE_KEY = 'tam-giao:sound-muted'
 
 let audioCtx: AudioContext | null = null
 
+/**
+ * iOS routes Web Audio through the ringer channel by default, so the silent switch mutes it.
+ * Declaring a "playback" audio session (Safari 17+) makes it play like media instead.
+ */
+function setPlaybackAudioSession() {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+  if (!session) return
+  try {
+    session.type = 'playback'
+  } catch {
+    // ignore: unsupported session type
+  }
+}
+
+/** Older iOS only unlocks audio once a source is started inside a user gesture. */
+function unlock(ctx: AudioContext) {
+  const source = ctx.createBufferSource()
+  source.buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+  source.connect(ctx.destination)
+  source.start(0)
+}
+
 function getAudioContext(): AudioContext | null {
   const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!Ctor) return null
-  if (!audioCtx) audioCtx = new Ctor()
-  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {})
+  if (!audioCtx) {
+    setPlaybackAudioSession()
+    audioCtx = new Ctor()
+    unlock(audioCtx)
+  }
+  // iOS reports "interrupted" (not "suspended") after the app is backgrounded or the screen locks.
+  if (audioCtx.state !== 'running') audioCtx.resume().catch(() => {})
   return audioCtx
 }
 
