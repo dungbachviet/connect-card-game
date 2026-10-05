@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import type { Deck } from '../data/decks'
+import { HALLOWEEN } from '../theme/halloween'
 
 interface DeckSelectorProps {
   decks: Deck[]
@@ -9,8 +10,18 @@ interface DeckSelectorProps {
 export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden px-5 pb-12 pt-[calc(env(safe-area-inset-top,0px)+2.5rem)]">
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-fuchsia-500/20 blur-[110px]" aria-hidden />
-      <div className="pointer-events-none absolute bottom-[-8rem] right-[-6rem] h-72 w-72 rounded-full bg-sky-500/10 blur-[100px]" aria-hidden />
+      <div
+        className={`pointer-events-none absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full blur-[110px] ${
+          HALLOWEEN ? 'bg-orange-500/20' : 'bg-fuchsia-500/20'
+        }`}
+        aria-hidden
+      />
+      <div
+        className={`pointer-events-none absolute bottom-[-8rem] right-[-6rem] h-72 w-72 rounded-full blur-[100px] ${
+          HALLOWEEN ? 'bg-purple-600/15' : 'bg-sky-500/10'
+        }`}
+        aria-hidden
+      />
 
       <motion.header
         initial={{ opacity: 0, y: -12 }}
@@ -18,16 +29,33 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
         transition={{ duration: 0.5 }}
         className="relative z-10 mx-auto max-w-md text-center"
       >
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur">
-          🃏 Bộ bài kết nối
-        </span>
-        <h1 className="mt-4 bg-gradient-to-br from-white via-white to-zinc-400 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl">
+        {HALLOWEEN ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200 backdrop-blur">
+            🎃 Halloween · Bộ bài kết nối
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur">
+            🃏 Bộ bài kết nối
+          </span>
+        )}
+        <h1
+          className={`mt-4 bg-gradient-to-br bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl ${
+            HALLOWEEN
+              ? 'from-amber-200 via-orange-400 to-purple-400 drop-shadow-[0_0_24px_rgba(249,115,22,0.35)]'
+              : 'from-white via-white to-zinc-400'
+          }`}
+        >
           Tâm Giao
         </h1>
         <p className="mt-3 text-balance text-sm leading-relaxed text-zinc-400 sm:text-base">
           Chọn một bộ bài, rút một lá, và để câu hỏi dẫn dắt cuộc trò chuyện.
           Chỉ cần một chiếc điện thoại để cả nhóm hiểu nhau hơn.
         </p>
+        {HALLOWEEN && (
+          <p className="mt-2 text-sm font-medium text-orange-300/80">
+            Đêm Halloween — kể nhau nghe những điều thật lòng nhất 👻
+          </p>
+        )}
       </motion.header>
 
       <div className="relative z-10 mx-auto mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">

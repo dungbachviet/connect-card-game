@@ -1,5 +1,7 @@
 import { motion } from 'motion/react'
 import type { Deck } from '../data/decks'
+import { HALLOWEEN } from '../theme/halloween'
+import { SpiderWeb } from './HalloweenDecor'
 
 interface PlayingCardProps {
   deck: Deck
@@ -34,6 +36,12 @@ export function PlayingCard({ deck, question, revealed, onDraw }: PlayingCardPro
           }}
         >
           <div className="absolute inset-4 rounded-[20px] border border-white/25" />
+          {HALLOWEEN && (
+            <>
+              <SpiderWeb className="absolute right-4 top-4 h-20 w-20 rounded-tr-[20px] text-white/40" flip />
+              <span className="absolute bottom-6 left-7 text-2xl opacity-90">🎃</span>
+            </>
+          )}
           <span className="text-6xl drop-shadow-sm">{deck.emoji}</span>
           <div>
             <p
@@ -64,6 +72,9 @@ export function PlayingCard({ deck, question, revealed, onDraw }: PlayingCardPro
             className="absolute inset-x-6 top-6 h-px opacity-40"
             style={{ background: `linear-gradient(90deg, transparent, ${deck.from}, transparent)` }}
           />
+          {HALLOWEEN && (
+            <SpiderWeb className="absolute left-0 top-0 h-16 w-16 rounded-tl-[28px] text-zinc-400/20" />
+          )}
           <span className="text-3xl">{deck.emoji}</span>
           <p className="text-balance text-xl font-semibold leading-snug text-zinc-50 sm:text-2xl">
             {question}
