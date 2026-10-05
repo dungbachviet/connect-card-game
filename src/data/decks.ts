@@ -1,3 +1,5 @@
+export type DeckOrder = 'ordered' | 'shuffled'
+
 export interface Deck {
   id: string
   title: string
@@ -8,6 +10,8 @@ export interface Deck {
   to: string
   glow: string
   textOnAccent: string
+  /** Thứ tự rút bài mặc định khi mở bộ lần đầu. Mặc định: 'shuffled'. */
+  defaultOrder?: DeckOrder
   questions: string[]
 }
 
@@ -217,6 +221,50 @@ export const decks: Deck[] = [
       'Điều gì khiến bạn cảm thấy được là chính mình khi ở bên người ấy?',
       'Nếu viết một lá thư tình cho người ấy ngay bây giờ, câu đầu tiên sẽ là gì?',
       'Điều gì bạn biết ơn nhất về mối quan hệ này?',
+    ],
+  },
+  {
+    id: 'tu-yeu-toi-roommate',
+    title: 'Từ Yêu Tới Roommate',
+    tagline: 'Từ người yêu cũ thành bạn cùng phòng',
+    description: '25 câu hỏi giúp hai người thống nhất cách sống chung, giữ ranh giới và thật lòng với nhau.',
+    emoji: '🏠',
+    from: '#7dd3fc',
+    to: '#0284c7',
+    glow: 'rgba(56,189,248,0.45)',
+    textOnAccent: '#082f49',
+    defaultOrder: 'ordered',
+    questions: [
+      // Level 1 — Thoải mái & an toàn
+      'Sau một thời gian sống cùng nhau như hai người bạn, hiện tại bạn cảm thấy thế nào?',
+      'Bạn có cảm thấy thoải mái và tự nhiên hơn với mình so với thời gian đầu sau khi chia tay không?',
+      'Với bạn, việc từ người yêu trở thành bạn và roommate có khó không? Điều gì là khó nhất?',
+      'Có lúc nào bạn vẫn cảm thấy chúng ta đang ở trong "vai trò người yêu cũ" thay vì đơn giản là hai người bạn cùng phòng không?',
+      'Theo bạn, chúng ta cần làm gì để có thể thực sự thoải mái, tự nhiên và dễ chia sẻ với nhau hơn?',
+      // Level 2 — Thống nhất cách sống chung
+      'Chúng ta nên chia việc nhà như thế nào để cả hai thấy công bằng?',
+      'Những việc nào cần phân công rõ ràng, thay vì "ai rảnh thì làm"?',
+      'Về tiền điện, nước, internet, đồ dùng chung và các khoản chi khác, chúng ta nên chia thế nào?',
+      'Những khoản nào cần hỏi ý nhau trước khi mua hoặc sử dụng tiền chung?',
+      'Về giờ giấc, không gian riêng và thói quen sinh hoạt, có điều gì chúng ta cần thống nhất?',
+      'Việc đưa bạn bè, người yêu hoặc người khác về phòng nên có những giới hạn nào?',
+      'Nếu một người không hài lòng với cách sống của người kia, chúng ta nên nói với nhau như thế nào?',
+      'Nếu muốn thay đổi một quy tắc đang có, chúng ta sẽ cùng quyết định như thế nào?',
+      // Level 3 — Ranh giới & cách đối xử
+      'Có điều gì chúng ta từng làm khi còn yêu mà bây giờ không nên tiếp tục?',
+      'Bạn muốn chúng ta giữ những ranh giới nào để cả hai thực sự cảm thấy mình đang là bạn?',
+      'Khi có chuyện không vui, bạn muốn được góp ý ngay hay cần thời gian trước?',
+      'Có điều gì bạn muốn mình ngừng làm vì nó khiến bạn cảm thấy chúng ta vẫn đang mắc kẹt trong mối quan hệ cũ?',
+      'Theo bạn, điều gì sẽ giúp chúng ta trở thành những người bạn cùng phòng tốt của nhau?',
+      // Level 4 — Thành thật về tình cảm hiện tại
+      'Hiện tại, bạn còn cảm xúc gì với mình không?',
+      'Bạn cảm thấy mình đã thực sự move on khỏi mối quan hệ cũ chưa?',
+      'Hiện tại bạn có đang tìm hiểu hoặc có tình cảm với ai không?',
+      'Nếu một trong hai người bắt đầu một mối quan hệ mới, chúng ta nên nói với nhau như thế nào?',
+      'Sau tất cả, bạn muốn mối quan hệ giữa chúng ta trở thành như thế nào từ bây giờ?',
+      // Mở rộng — Khi cần nói rõ hơn
+      'Nếu sau này một trong hai người muốn chuyển ra ngoài, chúng ta muốn nói với nhau và xử lý chuyện đó như thế nào?',
+      'Có điều gì chúng ta cần thống nhất ngay từ hôm nay, để từ giờ về sau có thể thật sự là hai người bạn "đúng nghĩa", thoải mái với cuộc sống riêng của mình mà không bị "chuyện cũ" ảnh hưởng?',
     ],
   },
 ]

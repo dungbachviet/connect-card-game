@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import type { Deck } from '../data/decks'
+import type { Deck, DeckOrder } from '../data/decks'
 import { useCardSound } from '../hooks/useCardSound'
 import { useDeckQueue } from '../hooks/useDeckQueue'
 import { PlayingCard } from './PlayingCard'
@@ -13,7 +13,7 @@ interface GameScreenProps {
 const FLIP_HALF_MS = 340
 
 export function GameScreen({ deck, onBack }: GameScreenProps) {
-  const queue = useDeckQueue(deck.id, deck.questions)
+  const queue = useDeckQueue(deck.id, deck.questions, deck.defaultOrder)
   const { play: playFlipSound, muted, toggleMuted } = useCardSound()
   const [revealed, setRevealed] = useState(queue.currentQuestion !== null)
   const [displayed, setDisplayed] = useState<string | null>(queue.currentQuestion)
@@ -64,6 +64,13 @@ export function GameScreen({ deck, onBack }: GameScreenProps) {
     setRevealed(false)
     window.setTimeout(() => queue.reset(), FLIP_HALF_MS)
   }
+
+  const isOrdered = queue.mode === 'ordered'
+
+  const orderOptions: { value: DeckOrder; label: string }[] = [
+    { value: 'ordered', label: 'Theo thứ tự' },
+    { value: 'shuffled', label: 'Xáo trộn' },
+  ]
 
   const progress = queue.total > 0 ? Math.min(1, queue.drawnCount / queue.total) : 0
 
@@ -123,7 +130,8 @@ export function GameScreen({ deck, onBack }: GameScreenProps) {
             type="button"
             onClick={handleReset}
             className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-zinc-200 backdrop-blur transition hover:bg-white/10 active:scale-95"
-            aria-label="Xáo lại bộ bài"
+            aria-label={isOrdered ? 'Bắt đầu lại từ câu đầu tiên' : 'Xáo lại bộ bài'}
+            title={isOrdered ? 'Bắt đầu lại từ câu đầu tiên' : 'Xáo lại bộ bài'}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path
@@ -147,6 +155,35 @@ export function GameScreen({ deck, onBack }: GameScreenProps) {
         />
       </div>
 
+      <div
+        role="radiogroup"
+        aria-label="Thứ tự rút bài"
+        className="relative z-10 mx-auto mt-4 flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur"
+      >
+        {orderOptions.map((option) => {
+          const active = queue.mode === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => queue.setMode(option.value)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition active:scale-95 ${
+                active ? 'shadow' : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+              style={
+                active
+                  ? { background: `linear-gradient(135deg, ${deck.from}, ${deck.to})`, color: deck.textOnAccent }
+                  : undefined
+              }
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+
       <main className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 py-6">
         <PlayingCard deck={deck} question={displayed} revealed={revealed} onDraw={handleDraw} />
 
@@ -162,7 +199,9 @@ export function GameScreen({ deck, onBack }: GameScreenProps) {
             >
               {displayed === null
                 ? 'Chạm vào lá bài để rút câu hỏi đầu tiên'
-                : `Câu ${queue.drawnCount} / ${queue.total} · hết bộ sẽ tự xáo lại`}
+                : `Câu ${queue.drawnCount} / ${queue.total} · ${
+                    isOrdered ? 'theo thứ tự gốc' : 'hết bộ sẽ tự xáo lại'
+                  }`}
             </motion.p>
           </AnimatePresence>
 
