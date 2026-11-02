@@ -25,7 +25,7 @@ export function GameScreen({ deck, onBack }: GameScreenProps) {
     setDisplayed(queue.currentQuestion)
     setRevealed(queue.currentQuestion !== null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queue.currentQuestion])
+  }, [queue.actionCount])
 
   const handleDraw = () => {
     if (pending.current) return

@@ -46,6 +46,8 @@ function loadState(deckId: string, total: number, defaultMode: DeckOrder): Queue
 export function useDeckQueue(deckId: string, questions: string[], defaultMode: DeckOrder = 'shuffled') {
   const total = questions.length
   const [state, setState] = useState<QueueState>(() => loadState(deckId, total, defaultMode))
+  // Counts draw/reset/goBack, which may leave the current question unchanged. setMode is excluded.
+  const [actionCount, setActionCount] = useState(0)
 
   useEffect(() => {
     setState(loadState(deckId, total, defaultMode))
@@ -70,14 +72,17 @@ export function useDeckQueue(deckId: string, questions: string[], defaultMode: D
       }
       return { ...prev, pointer: nextPointer }
     })
+    setActionCount((count) => count + 1)
   }, [total])
 
   const reset = useCallback(() => {
     setState((prev) => ({ ...prev, order: freshOrder(total, prev.mode), pointer: -1 }))
+    setActionCount((count) => count + 1)
   }, [total])
 
   const goBack = useCallback(() => {
     setState((prev) => (prev.pointer > 0 ? { ...prev, pointer: prev.pointer - 1 } : prev))
+    setActionCount((count) => count + 1)
   }, [])
 
   // Keep the cards already drawn; only rearrange the ones not yet drawn.
@@ -96,6 +101,7 @@ export function useDeckQueue(deckId: string, questions: string[], defaultMode: D
 
   return {
     currentQuestion,
+    actionCount,
     drawnCount,
     total,
     draw,
