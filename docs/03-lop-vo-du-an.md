@@ -122,6 +122,18 @@ tsconfig.json            File gốc, không tự kiểm tra gì. Chỉ trỏ t�
 
 Đó là lý do [tsconfig.app.json:5](../tsconfig.app.json#L5) có `"lib": ["ES2023", "DOM"]`, còn [tsconfig.node.json:5](../tsconfig.node.json#L5) không có `DOM`. Nếu bạn viết `document.title` trong `vite.config.ts`, TypeScript sẽ báo lỗi, và lỗi đó đúng vì Node không có `document`.
 
+Vì sao phải tách thành hai bộ luật thay vì dùng chung một file cấu hình? Có thể hiểu qua ba điểm sau:
+
+1. **Hai môi trường chạy hoàn toàn khác nhau.** Trong dự án dùng Vite, code được chia làm hai nhóm:
+   - **Code trong `src/`** chạy trên trình duyệt của người dùng, nơi có `window`, `document` và các thẻ HTML.
+   - **File cấu hình như `vite.config.ts`** chạy trên **Node.js**, tức môi trường máy chủ (máy đang chạy lệnh `dev` hoặc `build`), nơi không có `window` hay `document`.
+2. **Bộ luật phải khớp với môi trường.** TypeScript cần biết code chạy ở đâu để quyết định API nào được phép dùng:
+   - `tsconfig.app.json` có thêm `DOM` trong `"lib"`, nên bạn gọi được các API của trình duyệt như `document.getElementById` hay `window.localStorage`.
+   - `tsconfig.node.json` không có `DOM`, vì Node.js không có các API đó.
+3. **Ví dụ thực tế: `document.title`.** Nếu bạn vô tình gõ `document.title = "Trang chủ"` trong `vite.config.ts`, TypeScript sẽ báo lỗi ngay. Lỗi này hoàn toàn đúng, vì Node.js không có trang web nào để đổi tiêu đề.
+
+Nhờ tách hai file cấu hình, những lỗi như vậy được phát hiện ngay lúc gõ code, thay vì đến lúc chạy thật mới bị crash.
+
 `tsc -b` trong lệnh `build` có nghĩa là "build theo các tham chiếu", tức là kiểm tra cả hai bộ. Dưới đây là những tùy chọn sẽ ảnh hưởng trực tiếp tới code bạn đọc trong các bài sau:
 
 | Tùy chọn | Hệ quả bạn sẽ thấy trong code |
