@@ -2,6 +2,8 @@
 
 **File trong bài:** [src/components/PlayingCard.tsx](../src/components/PlayingCard.tsx)
 
+**Nên đọc trước:** [08-00. Đọc từng dòng PlayingCard](08-00-doc-tung-dong-playing-card.md)
+
 **Sau bài này, bạn sẽ hiểu:** mô hình component trình bày, cách một giá trị boolean điều khiển animation, và kỹ thuật lật thẻ 3D.
 
 ## 1. Vai trò: nhận lệnh, không ra quyết định
@@ -165,4 +167,4 @@ Khoảng 85ms sau khi bắt đầu lật, vì đường cong ease đưa thẻ qu
 
 ---
 
-**Bài tiếp theo:** [09. useDeckQueue](09-use-deck-queue.md)
+**Bài tiếp theo:** [09-00. Đọc từng dòng useDeckQueue](09-00-doc-tung-dong-use-deck-queue.md)

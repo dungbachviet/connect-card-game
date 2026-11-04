@@ -256,4 +256,4 @@ Nó không có dữ liệu nào đổi theo thời gian mà phải tự nhớ. T
 
 ---
 
-**Bài tiếp theo:** [08. PlayingCard](08-playing-card.md)
+**Bài tiếp theo:** [08-00. Đọc từng dòng PlayingCard](08-00-doc-tung-dong-playing-card.md)

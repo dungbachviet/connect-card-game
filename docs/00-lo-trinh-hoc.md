@@ -16,8 +16,11 @@ Sau khi đọc xong, bạn sẽ có thể tự vẽ lại kiến trúc app, gi�
 | 05 | [Tư duy React qua App](05-tu-duy-react-qua-app.md) | `App.tsx` | JSX, render, `useState`, `key`, vòng đời |
 | 06 | [Dữ liệu và TypeScript](06-du-lieu-va-typescript.md) | `decks.ts`, `halloween.ts` | Kiểu dữ liệu, data-driven UI |
 | 07 | [DeckSelector](07-deck-selector.md) | `DeckSelector.tsx` | Props, `.map()`, callback, Tailwind, Motion |
+| 08-00 | [Đọc từng dòng PlayingCard](08-00-doc-tung-dong-playing-card.md) | `PlayingCard.tsx` | Từng dòng code, HTML thật của lá bài |
 | 08 | [PlayingCard](08-playing-card.md) | `PlayingCard.tsx` | Component trình bày, lật thẻ 3D |
+| 09-00 | [Đọc từng dòng useDeckQueue](09-00-doc-tung-dong-use-deck-queue.md) | `useDeckQueue.ts` | Từng dòng code, có ví dụ với số cụ thể |
 | 09 | [useDeckQueue](09-use-deck-queue.md) | `useDeckQueue.ts` | State bất biến, `useEffect`, custom hook |
+| 10-00 | [Đọc từng dòng GameScreen](10-00-doc-tung-dong-game-screen.md) | `GameScreen.tsx` | Từng dòng code, các trạng thái của màn hình chơi |
 | 10 | [GameScreen](10-game-screen.md) | `GameScreen.tsx` | `useRef`, closure, điều phối bất đồng bộ |
 | 11 | [HalloweenDecor](11-halloween-decor.md) | `HalloweenDecor.tsx` | SVG, keyframes, giảm chuyển động |
 | 12 | [useCardSound](12-use-card-sound.md) | `useCardSound.ts` | Web Audio, code ngoài React |

@@ -2,6 +2,8 @@
 
 **File trong bài:** [src/components/GameScreen.tsx](../src/components/GameScreen.tsx)
 
+**Nên đọc trước:** [10-00. Đọc từng dòng GameScreen](10-00-doc-tung-dong-game-screen.md)
+
 **Sau bài này, bạn sẽ hiểu:** `useRef`, cách phối hợp code bất đồng bộ với render, closure trong thực tế, và lý do tồn tại của từng biến trông có vẻ thừa.
 
 Bài này có nhiều thí nghiệm "xóa đi xem hỏng gì". Những mục ghi "Kiểm chứng" và các bảng số liệu đều đến từ việc chạy thật trên trình duyệt.

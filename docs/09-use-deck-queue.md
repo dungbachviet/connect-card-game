@@ -2,6 +2,8 @@
 
 **File trong bài:** [src/hooks/useDeckQueue.ts](../src/hooks/useDeckQueue.ts)
 
+**Nên đọc trước:** [09-00. Đọc từng dòng useDeckQueue](09-00-doc-tung-dong-use-deck-queue.md)
+
 **Sau bài này, bạn sẽ hiểu:** cách mô hình hóa trạng thái, cách cập nhật state bất biến, `useEffect`, `useCallback`, và custom hook là gì.
 
 File này không có một dòng JSX nào: đây là logic thuần túy. Hãy đọc thật chậm, vì đây là nơi tập trung nhiều kiến thức React nhất.
@@ -703,4 +705,4 @@ Vì React so sánh theo tham chiếu. Sửa trực tiếp giữ nguyên tham chi
 
 ---
 
-**Bài tiếp theo:** [10. GameScreen](10-game-screen.md)
+**Bài tiếp theo:** [10-00. Đọc từng dòng GameScreen](10-00-doc-tung-dong-game-screen.md)
