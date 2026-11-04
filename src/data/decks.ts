@@ -1,20 +1,34 @@
+// Dữ liệu của game: định nghĩa kiểu Deck và nội dung tất cả các bộ bài.
+// Muốn thêm bộ bài mới chỉ cần thêm một phần tử vào mảng `decks`, giao diện sẽ tự hiển thị.
+
+/** Cách rút bài: 'ordered' = theo thứ tự trong mảng `questions`, 'shuffled' = xáo ngẫu nhiên. */
 export type DeckOrder = 'ordered' | 'shuffled'
 
 export interface Deck {
+  /** Định danh duy nhất, đồng thời dùng làm khóa lưu tiến độ trong localStorage. */
   id: string
+  /** Tên bộ bài. */
   title: string
+  /** Khẩu hiệu ngắn hiển thị dưới tên. */
   tagline: string
+  /** Mô tả hiển thị trên thẻ ở màn chọn bộ bài. */
   description: string
   emoji: string
+  /** Màu đầu của gradient. */
   from: string
+  /** Màu cuối của gradient. */
   to: string
+  /** Màu vệt sáng và đổ bóng xung quanh. */
   glow: string
+  /** Màu chữ khi đặt trên nền gradient, đảm bảo đọc rõ. */
   textOnAccent: string
   /** Thứ tự rút bài mặc định khi mở bộ lần đầu. Mặc định: 'shuffled'. */
   defaultOrder?: DeckOrder
+  /** Danh sách câu hỏi. Các comment "Level" bên trong chỉ để chia nhóm khi đọc code. */
   questions: string[]
 }
 
+// Danh sách các bộ bài, hiển thị theo đúng thứ tự này ở màn chọn bộ bài
 export const decks: Deck[] = [
   {
     id: 'ban-moi',
@@ -269,4 +283,5 @@ export const decks: Deck[] = [
   },
 ]
 
+// Tìm bộ bài theo id; trả về undefined nếu không có
 export const getDeckById = (id: string) => decks.find((deck) => deck.id === id)

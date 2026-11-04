@@ -1,21 +1,26 @@
+// Màn hình đầu tiên: giới thiệu app và hiển thị danh sách bộ bài để người chơi chọn.
 import { motion } from 'motion/react'
 import type { Deck } from '../data/decks'
 import { HALLOWEEN } from '../theme/halloween'
 
 interface DeckSelectorProps {
   decks: Deck[]
+  /** Gọi khi người chơi bấm vào một bộ bài, truyền lên id của bộ đó. */
   onSelect: (deckId: string) => void
 }
 
 export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
   return (
+    // Khung toàn màn hình. `safe-area-inset-top` chừa chỗ cho tai thỏ trên điện thoại.
     <div className="relative flex min-h-dvh flex-col overflow-hidden px-5 pb-12 pt-[calc(env(safe-area-inset-top,0px)+2.5rem)]">
+      {/* Vệt sáng mờ ở mép trên (chỉ để trang trí, aria-hidden: trình đọc màn hình bỏ qua) */}
       <div
         className={`pointer-events-none absolute -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full blur-[110px] ${
           HALLOWEEN ? 'bg-orange-500/20' : 'bg-fuchsia-500/20'
         }`}
         aria-hidden
       />
+      {/* Vệt sáng mờ ở góc dưới bên phải */}
       <div
         className={`pointer-events-none absolute bottom-[-8rem] right-[-6rem] h-72 w-72 rounded-full blur-[100px] ${
           HALLOWEEN ? 'bg-purple-600/15' : 'bg-sky-500/10'
@@ -23,12 +28,14 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
         aria-hidden
       />
 
+      {/* Phần đầu trang: nhãn + tên app + mô tả, trượt từ trên xuống khi vừa mở */}
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="relative z-10 mx-auto max-w-md text-center"
       >
+        {/* Nhãn nhỏ dạng viên thuốc, đổi màu theo theme */}
         {HALLOWEEN ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-400/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-200 backdrop-blur">
             🎃 Halloween · Bộ bài kết nối
@@ -38,6 +45,8 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
             🃏 Bộ bài kết nối
           </span>
         )}
+
+        {/* Tên app: chữ trong suốt + bg-clip-text để màu gradient hiện trong lòng chữ */}
         <h1
           className={`mt-4 bg-gradient-to-br bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl ${
             HALLOWEEN
@@ -47,10 +56,14 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
         >
           Tâm Giao
         </h1>
+
+        {/* Mô tả ngắn về app */}
         <p className="mt-3 text-balance text-sm leading-relaxed text-zinc-400 sm:text-base">
           Chọn một bộ bài, rút một lá, và để câu hỏi dẫn dắt cuộc trò chuyện.
           Chỉ cần một chiếc điện thoại để cả nhóm hiểu nhau hơn.
         </p>
+
+        {/* Dòng phụ chỉ có trong theme Halloween */}
         {HALLOWEEN && (
           <p className="mt-2 text-sm font-medium text-orange-300/80">
             Đêm Halloween — kể nhau nghe những điều thật lòng nhất 👻
@@ -58,8 +71,11 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
         )}
       </motion.header>
 
+      {/* Lưới các bộ bài: 1 cột trên điện thoại, 2 cột từ màn hình sm trở lên */}
       <div className="relative z-10 mx-auto mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
         {decks.map((deck, index) => (
+          // Một thẻ bộ bài. `delay` tăng theo index để các thẻ lần lượt hiện ra.
+          // `group` cho phép phần tử con đổi style khi hover cả thẻ (group-hover:...).
           <motion.button
             key={deck.id}
             type="button"
@@ -71,11 +87,14 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
             whileTap={{ scale: 0.97 }}
             className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-left backdrop-blur transition hover:border-white/20"
           >
+            {/* Đốm sáng ở góc thẻ, theo màu của bộ bài */}
             <div
               className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full opacity-30 blur-2xl transition group-hover:opacity-50"
               style={{ background: `linear-gradient(135deg, ${deck.from}, ${deck.to})` }}
               aria-hidden
             />
+
+            {/* Hàng trên: ô emoji bên trái, số câu hỏi bên phải */}
             <div className="relative flex items-start justify-between">
               <span
                 className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl shadow-lg"
@@ -87,11 +106,15 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
                 {deck.questions.length} câu
               </span>
             </div>
+
+            {/* Tên, khẩu hiệu và mô tả của bộ bài */}
             <h2 className="relative mt-4 text-lg font-bold text-zinc-50">{deck.title}</h2>
             <p className="relative mt-0.5 text-xs font-semibold uppercase tracking-wide text-zinc-500">
               {deck.tagline}
             </p>
             <p className="relative mt-2 text-sm leading-relaxed text-zinc-400">{deck.description}</p>
+
+            {/* Lời mời "Bắt đầu chơi" + icon mũi tên, mũi tên nhích sang phải khi hover */}
             <span className="relative mt-4 inline-flex items-center gap-1 text-sm font-semibold text-zinc-200">
               Bắt đầu chơi
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 transition group-hover:translate-x-0.5">
@@ -102,6 +125,7 @@ export function DeckSelector({ decks, onSelect }: DeckSelectorProps) {
         ))}
       </div>
 
+      {/* Mẹo chơi ở cuối trang, hiện sau cùng nhờ delay */}
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

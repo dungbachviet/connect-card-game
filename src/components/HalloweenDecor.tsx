@@ -1,21 +1,32 @@
+// Lớp trang trí Halloween phủ sau nội dung: trăng, mạng nhện, nhện, dơi, sương mù, bí ngô, ma.
 import { motion, useReducedMotion } from 'motion/react'
 
+// Thông số mạng nhện: số nan, bán kính các vòng tơ, kích thước khung vẽ SVG
 const SPOKES = 6
 const RINGS = [22, 44, 68, 94, 122]
 const WEB_SIZE = 130
 
+/**
+ * Tạo chuỗi `d` cho thẻ <path> của mạng nhện hình quạt 1/4 tròn, tâm ở góc (0,0).
+ * Lệnh SVG: M = nhấc bút đến điểm, L = kẻ đường thẳng, Q = kẻ đường cong.
+ */
 function webPath(): string {
+  // Chia đều góc 0°–90° cho các nan (Math.PI / 2 = 90°)
   const angles = Array.from({ length: SPOKES }, (_, i) => (Math.PI / 2) * (i / (SPOKES - 1)))
+  // Đổi tọa độ cực (bán kính, góc) sang tọa độ x, y
   const point = (r: number, a: number) => [r * Math.cos(a), r * Math.sin(a)] as const
   let d = ''
+  // Vẽ các nan: đường thẳng từ tâm tỏa ra ngoài
   for (const a of angles) {
     const [x, y] = point(WEB_SIZE, a)
     d += `M0 0L${x.toFixed(1)} ${y.toFixed(1)}`
   }
+  // Vẽ các vòng tơ: nối hai nan cạnh nhau bằng đường cong
   for (const r of RINGS) {
     for (let i = 0; i < angles.length - 1; i++) {
       const [x1, y1] = point(r, angles[i])
       const [x2, y2] = point(r, angles[i + 1])
+      // Điểm điều khiển kéo vào phía tâm (r * 0.82) khiến sợi tơ võng xuống như thật
       const [cx, cy] = point(r * 0.82, (angles[i] + angles[i + 1]) / 2)
       d += `M${x1.toFixed(1)} ${y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`
     }
@@ -23,8 +34,10 @@ function webPath(): string {
   return d
 }
 
+// Chỉ tính một lần khi nạp file, mọi mạng nhện dùng chung kết quả này
 const WEB_D = webPath()
 
+/** Mạng nhện SVG. Màu lấy theo `text-*` của className; `flip` lật ngang để gắn vào góc phải. */
 export function SpiderWeb({ className, flip = false }: { className?: string; flip?: boolean }) {
   return (
     <svg
@@ -39,6 +52,7 @@ export function SpiderWeb({ className, flip = false }: { className?: string; fli
   )
 }
 
+/** Hình con dơi SVG */
 function Bat({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 28" className={className} fill="currentColor" aria-hidden>
@@ -47,6 +61,8 @@ function Bat({ className }: { className?: string }) {
   )
 }
 
+// Mỗi con dơi: độ cao bay (top), kích thước, số giây bay qua màn hình,
+// số giây chờ trước khi xuất phát, biên độ chao lên xuống (px)
 const BATS = [
   { top: '12%', size: 'w-10', duration: 18, delay: 0, drift: 40 },
   { top: '26%', size: 'w-6', duration: 24, delay: 6, drift: 60 },
@@ -55,39 +71,44 @@ const BATS = [
 ]
 
 export function HalloweenDecor() {
+  // true nếu người dùng bật "giảm chuyển động" trong hệ điều hành → tắt các animation
   const reduceMotion = useReducedMotion()
 
   return (
+    // Phủ kín màn hình và nằm dưới nội dung (z-0). pointer-events-none để không chặn thao tác bấm.
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-      {/* Moon */}
+      {/* Mặt trăng và 3 miệng hố bên trong */}
       <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-100/90 opacity-60 shadow-[0_0_80px_30px_rgba(253,230,138,0.25)] sm:right-[8%] sm:top-[6%] sm:h-28 sm:w-28 sm:opacity-100">
         <div className="absolute left-[22%] top-[30%] h-3 w-3 rounded-full bg-amber-200/70" />
         <div className="absolute left-[55%] top-[55%] h-4 w-4 rounded-full bg-amber-200/60" />
         <div className="absolute left-[40%] top-[15%] h-2 w-2 rounded-full bg-amber-200/60" />
       </div>
 
-      {/* Eerie glows */}
+      {/* Hai vệt sáng ma mị: cam bên trái, tím bên phải */}
       <div className="absolute -left-24 top-1/3 h-80 w-80 rounded-full bg-orange-600/15 blur-[110px]" />
       <div className="absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-purple-700/20 blur-[110px]" />
 
-      {/* Corner webs */}
+      {/* Mạng nhện ở hai góc trên */}
       <SpiderWeb className="absolute left-0 top-0 h-32 w-32 text-zinc-300/25 sm:h-44 sm:w-44" />
       <SpiderWeb className="absolute right-0 top-0 h-24 w-24 text-zinc-300/20 sm:h-36 sm:w-36" flip />
 
-      {/* Dangling spider */}
+      {/* Con nhện treo trên sợi tơ, đu đưa quanh điểm treo ở trên cùng (originY: 0).
+          Mảng [0, 36, 0] là các mốc keyframe: animation đi qua lần lượt từng giá trị. */}
       <motion.div
         className="absolute left-[18%] top-0 flex flex-col items-center"
         style={{ originY: 0 }}
         animate={reduceMotion ? undefined : { y: [0, 36, 0], rotate: [-3, 3, -3] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       >
+        {/* Sợi tơ và con nhện */}
         <div className="h-24 w-px bg-zinc-300/30 sm:h-32" />
         <span className="-mt-1 text-xl opacity-80">🕷️</span>
       </motion.div>
 
-      {/* Bats */}
+      {/* Đàn dơi bay ngang màn hình (ẩn hẳn nếu người dùng bật giảm chuyển động) */}
       {!reduceMotion &&
         BATS.map((bat, i) => (
+          // Lớp ngoài: bay từ ngoài mép trái sang ngoài mép phải (x), vừa bay vừa chao lên xuống (y)
           <motion.div
             key={i}
             className={`absolute ${bat.size} text-zinc-950/90 drop-shadow-[0_0_6px_rgba(251,146,60,0.35)]`}
@@ -99,6 +120,7 @@ export function HalloweenDecor() {
               y: { duration: bat.duration / 2, delay: bat.delay, repeat: Infinity, ease: 'easeInOut' },
             }}
           >
+            {/* Lớp trong: co giãn theo chiều dọc để tạo cảm giác vỗ cánh */}
             <motion.div
               animate={{ scaleY: [1, 0.45, 1] }}
               transition={{ duration: 0.35, repeat: Infinity, ease: 'easeInOut' }}
@@ -108,8 +130,10 @@ export function HalloweenDecor() {
           </motion.div>
         ))}
 
-      {/* Ground fog + pumpkins */}
+      {/* Sương mù tím dưới đáy màn hình */}
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-purple-950/50 via-purple-950/15 to-transparent" />
+
+      {/* Bí ngô góc trái, lắc qua lắc lại */}
       <motion.span
         className="absolute bottom-3 left-4 text-3xl opacity-90 sm:text-4xl"
         animate={reduceMotion ? undefined : { rotate: [-4, 4, -4] }}
@@ -117,6 +141,8 @@ export function HalloweenDecor() {
       >
         🎃
       </motion.span>
+
+      {/* Con ma góc phải, bay lên xuống và mờ tỏ */}
       <motion.span
         className="absolute bottom-4 right-5 text-2xl opacity-80 sm:text-3xl"
         animate={reduceMotion ? undefined : { y: [0, -8, 0], opacity: [0.5, 0.9, 0.5] }}

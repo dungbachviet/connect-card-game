@@ -1,10 +1,13 @@
+/* Font chữ từ Google Fonts và toàn bộ class tiện ích của Tailwind */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+/* Báo trình duyệt dùng giao diện tối cho thanh cuộn, form... */
 :root {
   color-scheme: dark;
 }
 
+/* Cho các thẻ gốc cao bằng toàn màn hình */
 html,
 body,
 #root {
@@ -16,14 +19,18 @@ body {
   background: #0b0a12;
   color: #f4f4f5;
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  /* Bỏ ô sáng khi chạm trên điện thoại */
   -webkit-tap-highlight-color: transparent;
+  /* Tắt hiệu ứng kéo quá đà (kéo để tải lại trang) */
   overscroll-behavior-y: none;
 }
 
+/* Mặc định nút không kế thừa font của trang */
 button {
   font-family: inherit;
 }
 
+/* Cân đối độ dài các dòng chữ để không có dòng cuối quá ngắn */
 .text-balance {
   text-wrap: balance;
 }
