@@ -226,13 +226,152 @@ Tuy vậy, về mặt kỹ thuật, nó không phải hàm thuần hoàn toàn, 
 
 Phần tiếp theo sẽ cho thấy hàm này được gọi thế nào.
 
-## 3. Bắt đầu hook: khởi tạo lười
+## 3. Toàn cảnh hook `useDeckQueue`
+
+Các hàm ở phần 2 chỉ là công cụ. Từ đây, chúng ta đọc chính hook `useDeckQueue`. Nhiệm vụ của nó là **quản lý toàn bộ quá trình rút bài**: rút tiếp, xem lại, làm lại, đổi chế độ và lưu tiến trình. Hook không chứa JSX nào, nên nó không biết giao diện trông ra sao.
+
+Bạn có thể xem hook này như một **chiếc điều khiển từ xa** dành cho `GameScreen`: nó có các nút bấm như `draw`, `goBack`, và có màn hình báo như `currentQuestion`, `drawnCount`.
+
+### Toàn bộ code
 
 ```ts
 export function useDeckQueue(deckId: string, questions: string[], defaultMode: DeckOrder = 'shuffled') {
   const total = questions.length
   const [state, setState] = useState<QueueState>(() => loadState(deckId, total, defaultMode))
+  // Counts draw/reset/goBack, which may leave the current question unchanged. setMode is excluded.
+  const [actionCount, setActionCount] = useState(0)
+
+  useEffect(() => {
+    setState(loadState(deckId, total, defaultMode))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckId])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`tam-giao:${deckId}`, JSON.stringify(state))
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [deckId, state])
+
+  const justReshuffled = state.pointer === -1
+
+  const draw = useCallback(() => {
+    setState((prev) => {
+      const nextPointer = prev.pointer + 1
+      if (nextPointer >= total) {
+        return { ...prev, order: freshOrder(total, prev.mode), pointer: 0 }
+      }
+      return { ...prev, pointer: nextPointer }
+    })
+    setActionCount((count) => count + 1)
+  }, [total])
+
+  const reset = useCallback(() => {
+    setState((prev) => ({ ...prev, order: freshOrder(total, prev.mode), pointer: -1 }))
+    setActionCount((count) => count + 1)
+  }, [total])
+
+  const goBack = useCallback(() => {
+    setState((prev) => (prev.pointer > 0 ? { ...prev, pointer: prev.pointer - 1 } : prev))
+    setActionCount((count) => count + 1)
+  }, [])
+
+  // Keep the cards already drawn; only rearrange the ones not yet drawn.
+  const setMode = useCallback((mode: DeckOrder) => {
+    setState((prev) => {
+      if (prev.mode === mode) return prev
+      const drawn = prev.order.slice(0, prev.pointer + 1)
+      const remaining = prev.order.slice(prev.pointer + 1)
+      return { ...prev, mode, order: [...drawn, ...arrange(remaining, mode)] }
+    })
+  }, [])
+
+  const currentIndex = state.pointer >= 0 ? state.order[state.pointer] : null
+  const currentQuestion = currentIndex !== null ? questions[currentIndex] : null
+  const drawnCount = state.pointer >= 0 ? state.pointer + 1 : 0
+
+  return {
+    currentQuestion,
+    actionCount,
+    drawnCount,
+    total,
+    draw,
+    reset,
+    goBack,
+    mode: state.mode,
+    setMode,
+    canGoBack: state.pointer > 0,
+    justReshuffled,
+    isExhausted: drawnCount >= total,
+  }
+}
 ```
+
+### Hook gồm những phần nào?
+
+Code trông dài, nhưng thực ra chỉ có năm phần, đọc từ trên xuống:
+
+| Phần | Việc làm | Dòng code | Giải thích ở |
+|---|---|---|---|
+| 1. Khai báo state | Tạo `state` và `actionCount` | [46-50](../src/hooks/useDeckQueue.ts#L46-L50) | Ngay dưới đây |
+| 2. Hai effect | Nạp và lưu dữ liệu với `localStorage` | [52-63](../src/hooks/useDeckQueue.ts#L52-L63) | [Phần 4](#4-hai-useeffect) |
+| 3. Bốn hành động | `draw`, `reset`, `goBack`, `setMode` | [67-96](../src/hooks/useDeckQueue.ts#L67-L96) | [Phần 5](#5-các-hành-động-và-updater-function), [phần 6](#6-usecallback-để-làm-gì) |
+| 4. Giá trị suy ra | Tính câu hỏi hiện tại, số lá đã rút | [65](../src/hooks/useDeckQueue.ts#L65), [98-100](../src/hooks/useDeckQueue.ts#L98-L100) | [Phần 7](#7-giá-trị-suy-ra-và-đầu-ra-của-hook) |
+| 5. Trả về | Đưa giá trị và hành động cho `GameScreen` | [102-115](../src/hooks/useDeckQueue.ts#L102-L115) | [Phần 7](#7-giá-trị-suy-ra-và-đầu-ra-của-hook) |
+
+### Xem hook chạy qua một ví dụ
+
+Trước khi đọc chi tiết, hãy xem kết quả tổng thể. Giả sử bộ bài có 3 câu `['A', 'B', 'C']`, ở chế độ "Theo thứ tự", nên `order` luôn là `[0, 1, 2]`:
+
+| Hành động | `pointer` | `currentQuestion` | `drawnCount` | `canGoBack` | `isExhausted` | `actionCount` |
+|---|---|---|---|---|---|---|
+| Mở bộ bài lần đầu | -1 | `null` | 0 | `false` | `false` | 0 |
+| `draw()` | 0 | A | 1 | `false` | `false` | 1 |
+| `draw()` | 1 | B | 2 | `true` | `false` | 2 |
+| `goBack()` | 0 | A | 1 | `false` | `false` | 3 |
+| `draw()` | 1 | B | 2 | `true` | `false` | 4 |
+| `draw()` | 2 | C | 3 | `true` | `true` | 5 |
+| `draw()`, sang vòng mới | 0 | A | 1 | `false` | `false` | 6 |
+| `reset()` | -1 | `null` | 0 | `false` | `false` | 7 |
+
+Hãy để ý rằng các hành động chỉ đổi `state` và `actionCount`. Các cột còn lại đều được tính ra từ `pointer` và `order`.
+
+### Tham số và các dòng đầu tiên
+
+```ts
+export function useDeckQueue(deckId: string, questions: string[], defaultMode: DeckOrder = 'shuffled') {
+  const total = questions.length
+```
+
+`GameScreen` gọi hook này như sau ([GameScreen.tsx:16](../src/components/GameScreen.tsx#L16)):
+
+```ts
+const queue = useDeckQueue(deck.id, deck.questions, deck.defaultOrder)
+```
+
+| Tham số | Ý nghĩa |
+|---|---|
+| `deckId` | Id của bộ bài, dùng để tạo khóa lưu trong `localStorage` |
+| `questions` | Danh sách câu hỏi của bộ bài |
+| `defaultMode` | Chế độ khi chưa có dữ liệu lưu. Nếu không truyền, giá trị là `'shuffled'` |
+
+`total` chỉ là biến thường, được tính lại mỗi lần render.
+
+### Hai state của hook
+
+```ts
+const [state, setState] = useState<QueueState>(() => loadState(deckId, total, defaultMode))
+// Counts draw/reset/goBack, which may leave the current question unchanged. setMode is excluded.
+const [actionCount, setActionCount] = useState(0)
+```
+
+- **`state`** giữ ba trường đã nói ở phần 1: `order`, `pointer` và `mode`. Đây là dữ liệu của ván chơi, và được lưu vào `localStorage`.
+- **`actionCount`** chỉ đếm số lần gọi `draw`, `reset` và `goBack`. Đây không phải dữ liệu của ván chơi nên không được lưu, và trở về 0 mỗi khi `GameScreen` được tạo lại.
+
+Vì sao cần bộ đếm này? Không phải hành động nào cũng làm đổi câu hỏi. Ví dụ, bấm `reset` khi chưa rút lá nào thì `currentQuestion` vẫn là `null`. `GameScreen` cần một tín hiệu luôn thay đổi để biết hành động đã xong, và `actionCount` chính là tín hiệu đó. [Bài 10](10-game-screen.md#3-useeffect-chốt-của-cả-quy-trình) sẽ cho thấy app bị kẹt thế nào nếu thiếu nó.
+
+### Khởi tạo lười
 
 Hãy so sánh hai cách viết:
 
@@ -261,6 +400,8 @@ useEffect(() => {
 | `[]` | Chỉ khi mount |
 | Không có mảng | Sau mọi lần render |
 
+Trong hook, effect nạp dữ liệu đứng trước và effect lưu dữ liệu đứng sau. Các effect chạy theo đúng thứ tự khai báo. Dưới đây tôi giải thích effect lưu trước, vì nó quan trọng hơn.
+
 ### Effect lưu dữ liệu
 
 ```ts
@@ -274,6 +415,21 @@ useEffect(() => {
 ```
 
 Effect này có nghĩa là "mỗi khi `state` đổi, hãy ghi nó xuống". Hãy để ý cách nó đơn giản hóa phần còn lại: `draw`, `goBack`, `reset`, `setMode` không cần nhớ phải lưu, vì chỉ cần đổi state là tự có lưu.
+
+Quá trình khi bạn rút một lá:
+
+```text
+draw() đổi state
+→ React render lại với state mới
+→ React cập nhật giao diện
+→ Effect thấy state đã đổi, nên chạy
+→ JSON.stringify(state) biến object thành chuỗi
+→ localStorage lưu chuỗi đó vào khóa tam-giao:ban-moi
+```
+
+`localStorage` chỉ lưu được chuỗi, nên phải có `JSON.stringify`. Đây là việc ngược lại với `JSON.parse` trong `loadState`. Khối `try/catch` bỏ qua lỗi khi không ghi được, ví dụ bộ nhớ đã đầy. Khi đó app vẫn chơi được, chỉ là tải lại trang sẽ mất tiến trình.
+
+`actionCount` không nằm trong mảng dependency và cũng không được lưu, nên việc nó đổi không làm effect này chạy lại.
 
 Nó cũng chạy khi mount, nên chỉ cần **mở** một bộ bài là đã có dữ liệu được ghi. Tôi đã kiểm chứng: vừa vào bộ "Bạn Mới", `localStorage` đã có `pointer: -1`, `mode: 'shuffled'` và `order` đủ 60 phần tử.
 
@@ -340,7 +496,17 @@ const draw = useCallback(() => {
 }, [total])
 ```
 
-Khi đã rút hết, `draw` không dừng lại mà tạo thứ tự mới và tiếp tục từ đầu. Tôi đã kiểm chứng với bộ 25 lá: lá 25 hiện "Câu 25 / 25", lần rút sau hiện "Câu 1 / 25" và `pointer` về `0`.
+Hàm làm hai việc: đổi `state`, rồi tăng `actionCount`. Việc đổi `state` có hai nhánh, tùy theo lá tiếp theo còn hay không. Với bộ bài 4 câu:
+
+| `pointer` hiện tại | `nextPointer` | Nhánh | Kết quả |
+|---|---|---|---|
+| -1 (chưa rút) | 0 | Còn bài | `pointer = 0`, `order` giữ nguyên |
+| 1 | 2 | Còn bài | `pointer = 2`, `order` giữ nguyên |
+| 3 (lá cuối) | 4 | **Đã hết**, vì `4 >= 4` | Tạo `order` mới, `pointer = 0` |
+
+Khi đã rút hết, `draw` không dừng lại mà tạo thứ tự mới và tiếp tục từ đầu. `freshOrder` tạo thứ tự theo `prev.mode`, nên chỉ chế độ "Xáo trộn" mới xáo lại, còn chế độ "Theo thứ tự" quay về `[0, 1, 2, 3]`.
+
+Tôi đã kiểm chứng với bộ 25 lá: lá 25 hiện "Câu 25 / 25", lần rút sau hiện "Câu 1 / 25" và `pointer` về `0`.
 
 Có một lỗi tiềm ẩn: thứ tự xáo mới có thể đặt ngay lá vừa rút ở đầu, với xác suất 1/n, nên người chơi có thể gặp cùng một câu hai lần liên tiếp khi chuyển vòng. Bạn có thể xử lý trong một bài tập ở cuối.
 
@@ -360,6 +526,16 @@ const goBack = useCallback(() => {
 }, [])
 ```
 
+**`reset`** tạo một `order` mới và đưa `pointer` về `-1`, tức là chưa rút lá nào. Chế độ `mode` được giữ nguyên nhờ `...prev`. Hãy so sánh với nhánh hết bài của `draw`: cả hai đều tạo `order` mới, nhưng `draw` đặt `pointer = 0` để hiện ngay một câu, còn `reset` đặt `pointer = -1` để quay về lá bài úp.
+
+**`goBack`** giảm `pointer` đi 1, còn `order` không đổi. Vì vậy không có dữ liệu nào bị mất, và `draw` tiếp theo sẽ đi lại đúng lá đó. Điều kiện `prev.pointer > 0` dừng lại ở lá đầu tiên:
+
+| `pointer` hiện tại | Kết quả |
+|---|---|
+| 2 | `pointer = 1` |
+| 1 | `pointer = 0` |
+| 0 | Giữ nguyên, không lùi về `-1` |
+
 Trong `goBack`, khi đang ở lá đầu, hàm trả về chính `prev`, nên `state` được giữ nguyên. Nhưng `actionCount` vẫn tăng, nên vẫn có một lần render. Bài sau sẽ giải thích vì sao điều này quan trọng.
 
 Cặp ngoặc `(...)` quanh `{...}` trong `reset` là bắt buộc. Nếu thiếu, JavaScript sẽ hiểu `{` là mở thân hàm chứ không phải object.
@@ -376,6 +552,19 @@ const setMode = useCallback((mode: DeckOrder) => {
   })
 }, [])
 ```
+
+Hàm này chia `order` thành hai phần tại vị trí con trỏ, rồi chỉ sắp xếp lại phần sau. Ví dụ với `order = [2, 0, 3, 1]`, `pointer = 1`, khi chuyển sang "Theo thứ tự":
+
+```text
+drawn     = order.slice(0, 2)       = [2, 0]     Đã rút, giữ nguyên
+remaining = order.slice(2)          = [3, 1]     Chưa rút
+arrange(remaining, 'ordered')       = [1, 3]     Sắp xếp lại
+order mới = [...drawn, ...[1, 3]]   = [2, 0, 1, 3]
+```
+
+`pointer` không đổi, nên câu hiện tại vẫn là `order[1]`, tức người chơi không thấy lá đang xem bị đổi. Dòng `if (prev.mode === mode) return prev` bỏ qua trường hợp bấm lại đúng chế độ đang dùng, để thứ tự không bị xáo lại một cách vô ích.
+
+Khác với ba hành động trên, `setMode` không tăng `actionCount`, vì câu hiện tại không đổi và không có lần lật thẻ nào.
 
 Đây là kết quả thật khi tôi rút 3 lá của bộ "Từ Yêu Tới Roommate" theo thứ tự rồi chuyển sang "Xáo trộn":
 
@@ -431,9 +620,18 @@ const drawnCount = state.pointer >= 0 ? state.pointer + 1 : 0
 
 Đây là nguyên tắc ở [bài 05](05-tu-duy-react-qua-app.md#5-chỉ-lưu-những-gì-không-tính-được) được áp dụng: `currentQuestion` và `drawnCount` được tính từ state, không lưu riêng.
 
+Câu hỏi hiện tại được tra qua hai bước. Ví dụ với `order = [2, 0, 3, 1]` và `pointer = 1`:
+
+```text
+Bước 1: currentIndex    = order[1]      = 0
+Bước 2: currentQuestion = questions[0]  = câu hỏi đầu tiên trong mảng
+```
+
+Khi `pointer = -1`, hai giá trị này đều là `null`, và `drawnCount` là 0. Còn lại, `drawnCount` là `pointer + 1` vì vị trí được đếm từ 0: `pointer = 1` nghĩa là đã rút 2 lá.
+
 Dòng so sánh `currentIndex !== null` phải viết đầy đủ thay vì `currentIndex ? ... : ...`. Lý do là vị trí `0` là một vị trí hợp lệ nhưng lại được JavaScript xem là sai. Nếu viết tắt, câu hỏi đầu tiên sẽ không bao giờ hiện ra.
 
-Hook trả về một object, đóng vai trò API công khai của nó:
+Hook trả về một object, đóng vai trò API công khai của nó. `GameScreen` không chạm được vào `order` hay `pointer`, mà chỉ dùng những gì được trả về. `canGoBack` là `pointer > 0`, nên ở lá đầu tiên nút xem lại bị vô hiệu hóa.
 
 | Giá trị trả về | `GameScreen` có dùng? | Ghi chú |
 |---|---|---|
