@@ -104,7 +104,7 @@ Hai lời gọi này làm hai việc khác nhau:
 1. **`createRoot(element)`** biến thẻ `div` thành nơi React được toàn quyền quản lý.
 2. **`.render(<App />)`** bảo React vẽ `App` vào đó.
 
-Đây là lần duy nhất code của dự án "ra lệnh" cho DOM. Từ giờ trở đi, các component không gọi `document.createElement` hay `appendChild`. Chúng chỉ mô tả giao diện mong muốn, và React tự cập nhật DOM cho khớp. Đây là ý tưởng trung tâm của [bài tiếp theo](05-tu-duy-react-qua-app.md).
+Đây là lần duy nhất code của dự án "ra lệnh" cho DOM. Từ giờ trở đi, các component không gọi `document.createElement` hay `appendChild`. Chúng chỉ mô tả giao diện mong muốn, và React tự cập nhật DOM cho khớp. Đây là ý tưởng trung tâm của [bài 05](05-tu-duy-react-qua-app.md).
 
 ### `<StrictMode>`
 
@@ -207,4 +207,4 @@ Không. Vite đóng gói theo cây import bắt đầu từ `main.tsx`. Tuy nhi�
 
 ---
 
-**Bài tiếp theo:** [05. Tư duy React qua App](05-tu-duy-react-qua-app.md)
+**Bài tiếp theo:** [05-00. Đọc hiểu code App](05-00-doc-hieu-code-app.md)

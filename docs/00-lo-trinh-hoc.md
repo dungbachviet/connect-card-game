@@ -12,6 +12,7 @@ Sau khi đọc xong, bạn sẽ có thể tự vẽ lại kiến trúc app, gi�
 | 02 | [Hỏi đáp: dev và build](02-Q&A.md) | `package.json` (phần scripts) | Hai chế độ chạy |
 | 03 | [Lớp vỏ dự án](03-lop-vo-du-an.md) | `package.json`, `vite.config.ts`, `tsconfig*.json`, `.oxlintrc.json`, `.gitignore`, `public/` | npm, Vite, TypeScript, lint |
 | 04 | [Khởi động app](04-khoi-dong-app.md) | `index.html`, `main.tsx`, `index.css` | SPA, ES module, `createRoot`, `StrictMode` |
+| 05-00 | [Đọc hiểu code App](05-00-doc-hieu-code-app.md) | `App.tsx` | Từng dòng code, `motion.div` và `AnimatePresence` trong HTML thật |
 | 05 | [Tư duy React qua App](05-tu-duy-react-qua-app.md) | `App.tsx` | JSX, render, `useState`, `key`, vòng đời |
 | 06 | [Dữ liệu và TypeScript](06-du-lieu-va-typescript.md) | `decks.ts`, `halloween.ts` | Kiểu dữ liệu, data-driven UI |
 | 07 | [DeckSelector](07-deck-selector.md) | `DeckSelector.tsx` | Props, `.map()`, callback, Tailwind, Motion |

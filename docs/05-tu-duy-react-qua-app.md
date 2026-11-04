@@ -2,6 +2,8 @@
 
 **File trong bài:** [src/App.tsx](../src/App.tsx)
 
+**Nên đọc trước:** [05-00. Đọc hiểu code App](05-00-doc-hieu-code-app.md)
+
 **Sau bài này, bạn sẽ hiểu:** cách React nghĩ về giao diện, JSX thực chất là gì, state hoạt động thế nào, và `key` quyết định vòng đời component ra sao. Đây là bài nền tảng nhất của cả bộ tài liệu.
 
 ## 1. Ý tưởng cốt lõi: giao diện là kết quả của dữ liệu
