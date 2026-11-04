@@ -95,6 +95,18 @@ function freshOrder(total: number, mode: DeckOrder): number[] {
 
 ### `loadState`: đọc dữ liệu như đọc từ người lạ
 
+`loadState` trả lời một câu hỏi: **khi mở một bộ bài, nên bắt đầu từ đâu?** Nếu trình duyệt còn giữ tiến trình hợp lệ, hàm trả về tiến trình đó để người chơi chơi tiếp. Nếu không, hàm tạo một ván mới.
+
+Hàm nhận ba tham số:
+
+| Tham số | Ý nghĩa | Ví dụ |
+|---|---|---|
+| `deckId` | Id của bộ bài, dùng để tìm đúng dữ liệu đã lưu | `'ban-moi'` |
+| `total` | Số câu hỏi hiện có của bộ bài | `60` |
+| `defaultMode` | Chế độ dùng khi không có chế độ hợp lệ đã lưu | `'shuffled'` |
+
+Đây là toàn bộ code của hàm:
+
 ```ts
 function loadState(deckId: string, total: number, defaultMode: DeckOrder): QueueState {
   try {
@@ -113,21 +125,106 @@ function loadState(deckId: string, total: number, defaultMode: DeckOrder): Queue
 }
 ```
 
-Dữ liệu trong `localStorage` có thể đã cũ, bị sửa tay, hay bị hỏng. TypeScript không giúp được gì lúc chạy, nên hàm này tự phòng thủ qua nhiều lớp:
+Dữ liệu trong `localStorage` có thể đã cũ, bị sửa tay hoặc bị hỏng. TypeScript không giúp được gì lúc chạy, vì mọi kiểu đã bị xóa khi dịch. Do đó hàm phải tự kiểm tra, giống như khi bạn nhận dữ liệu từ một người lạ. Hàm chạy qua ba bước.
 
-| Lớp bảo vệ | Trường hợp xử lý |
+#### Bước 1: Đọc dữ liệu đã lưu
+
+```ts
+const raw = localStorage.getItem(`tam-giao:${deckId}`)
+if (raw) {
+```
+
+Mỗi bộ bài được lưu ở một khóa riêng, ví dụ `tam-giao:ban-moi`. Giá trị đọc được luôn là một **chuỗi**, ví dụ:
+
+```text
+'{"order":[2,0,3,1],"pointer":1,"mode":"shuffled"}'
+```
+
+Nếu chưa từng lưu, `getItem` trả về `null`. Khi đó `if (raw)` sai, và hàm đi thẳng xuống dòng `return` cuối để tạo ván mới.
+
+#### Bước 2: Kiểm tra từng lớp
+
+**Chuyển chuỗi thành object:**
+
+```ts
+const parsed = JSON.parse(raw) as Partial<QueueState>
+```
+
+- **`JSON.parse`** chuyển chuỗi thành object. Nếu chuỗi không phải JSON hợp lệ, ví dụ `abc`, hàm này báo lỗi. Lỗi đó được `catch` bắt lại.
+- **`Partial<QueueState>`** là kiểu có các trường giống `QueueState`, nhưng trường nào cũng có thể thiếu.
+- **`as`** chỉ là lời nói với TypeScript, và không kiểm tra gì lúc chạy. Vì vậy, nó không làm dữ liệu an toàn hơn. Tác dụng của nó ở đây là buộc bạn phải kiểm tra các trường trước khi dùng.
+
+**Kiểm tra `order` và `pointer`:**
+
+```ts
+if (Array.isArray(parsed.order) && parsed.order.length === total && typeof parsed.pointer === 'number') {
+```
+
+Cả ba điều kiện đều phải đúng thì dữ liệu cũ mới được dùng:
+
+| Điều kiện | Câu hỏi nó trả lời |
 |---|---|
-| `try/catch` | `JSON.parse` gặp chuỗi hỏng, hoặc trình duyệt chặn truy cập `localStorage` |
-| `as Partial<QueueState>` | Nói thật với TypeScript rằng các trường có thể thiếu |
-| `Array.isArray(parsed.order)` | `order` không phải mảng |
-| `parsed.order.length === total` | Số câu của bộ bài đã đổi so với lúc lưu |
-| `typeof parsed.pointer === 'number'` | `pointer` sai kiểu |
-| Kiểm tra `parsed.mode` | Dữ liệu cũ, từ trước khi có tính năng đổi chế độ |
-| Dòng `return` cuối | Mọi trường hợp còn lại: bắt đầu mới |
+| `Array.isArray(parsed.order)` | `order` có thật sự là mảng không? |
+| `parsed.order.length === total` | Số phần tử có khớp số câu hiện tại không? |
+| `typeof parsed.pointer === 'number'` | `pointer` có phải là số không? |
 
-Kiểm tra `mode` là một dấu tích lịch sử: theo git, tính năng này được thêm sau, nên bản lưu của người dùng cũ không có trường đó. Khi đổi định dạng dữ liệu đã lưu, bạn phải luôn nghĩ tới dữ liệu cũ.
+Điều kiện thứ hai xử lý trường hợp bộ bài đã đổi số câu kể từ lần lưu trước. Nếu bộ bài có thêm câu, `order` cũ không chứa vị trí của câu mới, nên câu đó sẽ không bao giờ được rút. Nếu bộ bài bớt câu, `order` cũ có thể trỏ tới một câu không còn tồn tại.
 
-Lưu ý rằng hàm chỉ kiểm tra kiểu của `pointer` chứ không kiểm tra khoảng giá trị. Nếu ai đó sửa tay `pointer` thành `999`, `currentQuestion` sẽ là `undefined`. Với một app chạy trên máy cá nhân thì đây là mức phòng thủ chấp nhận được.
+**Kiểm tra `mode`:**
+
+```ts
+const mode = parsed.mode === 'ordered' || parsed.mode === 'shuffled' ? parsed.mode : defaultMode
+```
+
+Nếu `mode` đã lưu là một trong hai giá trị hợp lệ thì giữ nguyên, nếu không thì dùng `defaultMode`. Lưu ý là `mode` sai **không** làm mất tiến trình, chỉ có `mode` được thay thế.
+
+Đây là một dấu tích lịch sử: theo git, tính năng đổi chế độ được thêm sau, nên bản lưu của người dùng cũ không có trường `mode`. Nhờ dòng này, họ vẫn chơi tiếp được. Khi đổi định dạng dữ liệu đã lưu, bạn phải luôn nghĩ tới dữ liệu cũ.
+
+#### Bước 3: Trả về kết quả
+
+Hàm có hai lối ra:
+
+```ts
+// Dữ liệu cũ hợp lệ: chơi tiếp từ chỗ cũ
+return { order: parsed.order, pointer: parsed.pointer, mode }
+
+// Các trường hợp còn lại: tạo ván mới, chưa rút lá nào
+return { order: freshOrder(total, defaultMode), pointer: -1, mode: defaultMode }
+```
+
+Lối ra đầu tạo một object mới chỉ gồm ba trường cần thiết, thay vì trả về nguyên `parsed`, nên các trường lạ trong dữ liệu đã lưu sẽ bị bỏ đi.
+
+Khối `try/catch` bao quanh cả hai bước đầu. Nó bắt lỗi khi `JSON.parse` gặp chuỗi hỏng, hoặc khi trình duyệt không cho truy cập `localStorage`. Khối `catch` không làm gì cả, nên code chạy tiếp xuống lối ra thứ hai.
+
+#### Kết quả với từng loại dữ liệu
+
+Tôi đã ghi từng loại dữ liệu vào `localStorage` của bộ "Từ Yêu Tới Roommate" (25 câu, mặc định theo thứ tự), rồi mở bộ bài trên trình duyệt thật:
+
+| Dữ liệu đã lưu | Kết quả | Dòng trạng thái |
+|---|---|---|
+| Hợp lệ, `pointer: 2`, `mode: 'shuffled'` | Chơi tiếp, giữ chế độ đã lưu | `Câu 3 / 25 · hết bộ sẽ tự xáo lại` |
+| Không có dữ liệu | Ván mới | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| Thiếu `mode` | Chơi tiếp, dùng chế độ mặc định | `Câu 3 / 25 · theo thứ tự gốc` |
+| `mode: 'random'` | Chơi tiếp, dùng chế độ mặc định | `Câu 3 / 25 · theo thứ tự gốc` |
+| `order` chỉ có 24 phần tử | Ván mới | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| `order: 'abc'` | Ván mới | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| `pointer: '2'` (chuỗi, không phải số) | Ván mới | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| Chuỗi `abc`, không phải JSON | Ván mới | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| Trình duyệt chặn `localStorage` | Ván mới, app không lỗi | `Chạm vào lá bài để rút câu hỏi đầu tiên` |
+| `pointer: 999` | **Lọt qua kiểm tra** | `Câu 1000 / 25 · theo thứ tự gốc` |
+
+Có hai điều rút ra từ bảng này:
+
+- **Dữ liệu hỏng không còn nữa sau khi mở bộ bài.** Effect lưu dữ liệu, sẽ học ở phần 4, ghi ván mới đè lên khóa đó. Với `order` 24 phần tử, sau khi mở, `localStorage` đã có `order` đủ 25 phần tử và `pointer: -1`.
+- **Dòng cuối là một lỗ hổng nhỏ.** Hàm chỉ kiểm tra kiểu của `pointer` chứ không kiểm tra khoảng giá trị, nên `999` vẫn được chấp nhận. Lúc này không có câu hỏi nào ở vị trí đó. Trường hợp này chỉ xảy ra khi dữ liệu bị sửa tay, nên với một app chạy trên máy cá nhân, đây là mức phòng thủ chấp nhận được.
+
+#### Vì sao `loadState` nằm ngoài hook?
+
+Hàm này không dùng `useState` hay `useEffect`, và không cần biết gì về quá trình render. Đặt nó ngoài hook có hai lợi ích: hàm không bị tạo lại ở mỗi lần render, và có thể gọi thử riêng mà không cần dựng component.
+
+Tuy vậy, về mặt kỹ thuật, nó không phải hàm thuần hoàn toàn, vì nó đọc `localStorage` và có thể xáo bài ngẫu nhiên. Khi viết test, bạn cần chuẩn bị sẵn dữ liệu trong `localStorage`.
+
+Phần tiếp theo sẽ cho thấy hàm này được gọi thế nào.
 
 ## 3. Bắt đầu hook: khởi tạo lười
 
@@ -144,7 +241,9 @@ useState(loadState(deckId, total, defaultMode))        // Chạy loadState ở M
 useState(() => loadState(deckId, total, defaultMode))  // Chỉ chạy khi mount
 ```
 
-Giá trị khởi tạo chỉ được dùng ở lần đầu. Cách viết đầu vẫn đọc `localStorage`, parse JSON và xáo bài ở mọi lần render, chỉ để vứt đi. Khi truyền một hàm, React chỉ gọi nó một lần. Kỹ thuật này gọi là **lazy initialization**, và nên dùng khi việc khởi tạo tốn công.
+Giá trị khởi tạo chỉ được dùng ở lần đầu. Cách viết đầu vẫn đọc `localStorage`, parse JSON và xáo bài ở mọi lần render, chỉ để vứt đi. Khi truyền một hàm, React chỉ gọi nó lúc mount, và các lần render sau không gọi lại. Kỹ thuật này gọi là **lazy initialization**, và nên dùng khi việc khởi tạo tốn công.
+
+Nếu đếm số lần `loadState` chạy khi mở một bộ bài, bạn sẽ thấy nhiều hơn một lần. Tôi đã đếm và thấy **2 lần ở bản build** và **4 lần ở chế độ dev**. Lần đầu đến từ `useState`, lần thứ hai đến từ effect theo `deckId` ở [phần 4](#4-hai-useeffect). Ở chế độ dev, `StrictMode` nhân đôi cả hai. Sau khi mount, rút thẻ không gọi lại `loadState` nữa.
 
 ## 4. Hai `useEffect`
 
